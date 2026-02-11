@@ -127,13 +127,15 @@ Key files to understand:
 
 **Example:**
 ```
-Before designing the architecture, I need to clarify:
+Before designing the architecture, I need to clarify a few things.
 
-1. OAuth provider: Which OAuth providers? (Google, GitHub, custom?)
-2. User data: Store OAuth tokens or just user profile?
-3. Existing auth: Replace current auth or add alongside?
-4. Sessions: Integrate with existing session management?
-5. Error handling: How to handle OAuth failures?
+[AskUserQuestion] "Which OAuth providers should we support?"
+  → Google only | Google + GitHub | Google + GitHub + custom | (Other)
+
+[AskUserQuestion] "How should we handle OAuth data and integration?"
+  → Store tokens + profile | Profile only, no token storage | (Other)
+  → Replace current auth entirely | Add alongside existing auth | (Other)
+  → Integrate with existing sessions | Separate OAuth sessions | (Other)
 ```
 
 ### Phase 4: Architecture Design
@@ -149,7 +151,7 @@ Before designing the architecture, I need to clarify:
 - The lead reviews all approaches and forms a recommendation
 - Architects are shut down after completing their designs
 - Presents comparison with trade-offs and recommendation
-- **Asks which approach you prefer**
+- **Uses `AskUserQuestion` to let you select your preferred approach** with structured options
 
 **What's new with teams:** Architects engage in constructive debate. If the "minimal" architect notices the "clean" approach introduces unnecessary complexity, they message each other to refine. The lead gets architectures that have already been stress-tested by peers.
 
@@ -236,10 +238,10 @@ All 3 implementers completed. Files created/modified:
 - Reviewers cross-reference each other's findings to reduce false positives
 - The lead consolidates findings and identifies highest severity issues
 - Reviewers are shut down after completing their reviews
-- **Presents findings and asks what you want to do**:
-  - Fix now
-  - Fix later
-  - Proceed as-is
+- **Presents findings and uses `AskUserQuestion` to let you choose**:
+  - Fix now — spawn an implementer to fix issues before proceeding
+  - Fix later — note issues and proceed to summary
+  - Proceed as-is — no changes needed, move to summary
 - If you choose 'fix now', a `code-implementer` teammate is spawned to apply the fixes in a separate context. For substantial fixes, a follow-up reviewer may be spawned to verify the corrections are sound.
 
 **What's new with teams:** Reviewers validate each other. If the "bugs" reviewer flags a potential null reference, the "conventions" reviewer can confirm or challenge it. This reduces false positives and strengthens high-confidence findings.
