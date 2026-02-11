@@ -34,8 +34,9 @@ Initial request: $ARGUMENTS
 4. Create tasks for all major phases using `TaskCreate`:
    - Exploration tasks (Phase 2) — one per exploration focus area
    - Architecture tasks (Phase 4) — one per design approach
+   - Implementation tasks (Phase 5) — will be refined after architecture is chosen, but create placeholder tasks now
    - Review tasks (Phase 6) — one per review focus area
-   - Set dependencies: architecture tasks `addBlockedBy` exploration tasks; review tasks `addBlockedBy` architecture tasks
+   - Set dependencies: architecture tasks `addBlockedBy` exploration tasks; implementation tasks `addBlockedBy` architecture tasks; review tasks `addBlockedBy` implementation tasks
 
 ---
 
@@ -98,17 +99,31 @@ If the user says "whatever you think is best", provide your recommendation and g
 
 ## Phase 5: Implementation
 
-**Goal**: Build the feature
+**Goal**: Build the feature through coordinated team implementation
 
 **DO NOT START WITHOUT USER APPROVAL**
 
+**IMPORTANT**: The lead MUST NOT implement code directly. Always delegate implementation to `code-implementer` teammates to keep the lead's context focused on coordination.
+
 **Actions**:
 1. Wait for explicit user approval of the chosen architecture
-2. Read all relevant files identified in previous phases
-3. Implement following chosen architecture
-4. Follow codebase conventions strictly
-5. Write clean, well-documented code
-6. Update tasks as you progress using `TaskUpdate`
+2. Assess the implementation scope from the chosen architecture blueprint:
+   - Identify the distinct components/files to create or modify
+   - Determine which pieces can be implemented independently in parallel
+   - Identify any sequential dependencies between components
+
+3. Break the implementation map into tasks. For multi-component features, create one task per independent file group — no two teammates should modify the same file. For small or tightly coupled features, create a single task covering all files.
+
+4. Create or refine implementation tasks using `TaskCreate` with clear descriptions: the component to build, files owned, interfaces to implement, and relevant context from Phases 2-4
+
+5. Spawn implementer teammates using the `Task` tool with `team_name` set to your team name and `subagent_type` set to `feature-dev:code-implementer`:
+   - For multi-component features: spawn one teammate per independent task (e.g., "impl-auth-service", "impl-routes", "impl-middleware")
+   - For small features: spawn a single teammate (e.g., "implementer")
+   - Include in each spawn prompt: the chosen architecture blueprint, the specific files they own, codebase conventions, and any interface contracts they need to honor
+
+6. Assign tasks using `TaskUpdate` with the `owner` parameter
+7. Wait for all implementers to complete. Monitor for blockers — if a teammate messages about a dependency on another teammate's work, help coordinate.
+8. Shut down implementer teammates using `SendMessage` with `type: "shutdown_request"`
 
 ---
 
@@ -129,7 +144,7 @@ If the user says "whatever you think is best", provide your recommendation and g
 4. Shut down reviewer teammates using `SendMessage` with `type: "shutdown_request"`
 5. Consolidate findings and identify highest severity issues that you recommend fixing
 6. **Present findings to user and ask what they want to do** (fix now, fix later, or proceed as-is)
-7. Address issues based on user decision
+7. If the user chooses "fix now": spawn a `code-implementer` teammate (e.g., "fixer") using the `Task` tool with `team_name` and `subagent_type` set to `feature-dev:code-implementer`. Include in the spawn prompt: the list of issues to fix with file paths and line numbers, the concrete fix suggestions from reviewers, and codebase conventions. Assign a task, wait for completion, then shut down the teammate.
 
 ---
 
