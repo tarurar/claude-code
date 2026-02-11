@@ -16,6 +16,8 @@ Building features requires more than just writing code. You need to:
 
 This plugin embeds these practices into a structured workflow that runs automatically when you use the `/feature-dev` command. Agent teams enable parallel exploration, collaborative design debates, and cross-referenced code review — going beyond what a single agent session can achieve.
 
+**Key design principle**: The lead agent is a pure orchestrator. It never reads source code files or searches the codebase directly — all exploration, design, implementation, and review happens in teammate contexts. This preserves the lead's context window for coordination across all 7 phases.
+
 ## Prerequisites
 
 Agent teams must be enabled. Add this to your `settings.json`:
@@ -75,10 +77,9 @@ Creating team "feature-dev-caching" with task list...
 **What happens:**
 - Spawns 2-3 `code-explorer` teammates, each exploring a different aspect
 - Explorers share discoveries with each other via direct messaging, avoiding duplicated work
-- Each explorer returns comprehensive analysis with key files to read
-- The lead reads all identified files to build deep understanding
+- Each explorer returns comprehensive analysis with key findings
 - Explorers are shut down after completing their work
-- Presents comprehensive summary of findings
+- The lead synthesizes explorer summaries (without reading source files itself) and presents findings
 
 **Teammates spawned:**
 - "Find features similar to [feature] and trace implementation"
@@ -239,7 +240,7 @@ All 3 implementers completed. Files created/modified:
   - Fix now
   - Fix later
   - Proceed as-is
-- Addresses issues based on your decision
+- If you choose 'fix now', a `code-implementer` teammate is spawned to apply the fixes in a separate context
 
 **What's new with teams:** Reviewers validate each other. If the "bugs" reviewer flags a potential null reference, the "conventions" reviewer can confirm or challenge it. This reduces false positives and strengthens high-confidence findings.
 
@@ -377,9 +378,8 @@ Suggested next steps:
 **Team behavior:** Cross-references findings with other reviewers, avoids duplicate reports, confirms or challenges others' findings to reduce false positives.
 
 **Output:**
-- Critical issues (confidence 75-100)
-- Important issues (confidence 50-74)
-- Specific fixes with file:line references
+- High-confidence issues (>= 80) grouped by severity
+- Each issue with confidence score, file:line reference, and fix suggestion
 - Project guideline references
 
 ## Usage Patterns
@@ -414,8 +414,8 @@ Let the workflow guide you through all 7 phases with coordinated team exploratio
 2. **Answer clarifying questions thoughtfully**: Phase 3 prevents future confusion
 3. **Choose architecture deliberately**: Phase 4 gives you peer-reviewed options for a reason
 4. **Don't skip code review**: Phase 6 catches issues with cross-validated findings
-5. **Read the suggested files**: Phase 2 identifies key files — read them to understand context
-6. **Let teammates finish**: The lead should wait for teammates to complete before synthesizing. Use delegate mode (Shift+Tab) during team phases to prevent the lead from implementing prematurely.
+5. **Let teammates finish**: The lead should wait for teammates to complete before synthesizing. Use delegate mode (Shift+Tab) during team phases to prevent the lead from reading files or implementing prematurely.
+6. **Trust teammate summaries**: The lead works from teammate reports, not from reading source files. This preserves context for the full 7-phase workflow.
 
 ## When to Use This Plugin
 
@@ -467,13 +467,15 @@ Let the workflow guide you through all 7 phases with coordinated team exploratio
 - If still unsure, ask for more explanation
 - Pick the pragmatic option when in doubt
 
-### Lead implementing instead of delegating
+### Lead reading files or exploring the codebase
 
-**Issue**: The lead starts doing exploration or review work itself
+**Issue**: The lead reads source files or searches patterns after teammates complete, consuming context rapidly
 
 **Solution**:
-- Tell the lead to wait for teammates
+- The lead is designed as a pure orchestrator — it should never read source files
 - Use delegate mode (Shift+Tab) to restrict the lead to coordination-only tools
+- If the lead says it needs more information, tell it to spawn an additional explorer teammate instead of reading files itself
+- If context is already consumed, restart the session with delegate mode enabled from the start
 
 ### Teammates not communicating
 
