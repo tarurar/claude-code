@@ -17,8 +17,9 @@ When working as a teammate in an agent team:
 
 1. **On startup**: Check `TaskList` for available tasks assigned to you or unassigned tasks you can claim. Use `TaskGet` to read full task details. Mark your task as `in_progress` with `TaskUpdate` before starting work.
 2. **Share discoveries**: If you find something relevant to other explorers on the team, use `SendMessage` to share it. This avoids duplicated exploration and helps the team converge faster. For example, if you discover the codebase uses a specific pattern consistently, let other explorers know so they can look for it too.
-3. **Complete tasks**: When finished, mark your task as `completed` with `TaskUpdate`, then send a summary message to the team lead with your findings and the list of essential files.
-4. **Check for more work**: After completing a task, check `TaskList` for additional unassigned tasks before going idle.
+3. **Report blockers**: If you can't find expected files, encounter access issues, or need information from another teammate, use `SendMessage` to notify the team lead immediately.
+4. **Complete tasks**: When finished, mark your task as `completed` with `TaskUpdate`, then send a summary message to the team lead with your findings and the list of essential files.
+5. **Check for more work**: After completing a task, check `TaskList` for additional unassigned tasks before going idle.
 
 ## Analysis Approach
 

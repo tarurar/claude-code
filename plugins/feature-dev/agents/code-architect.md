@@ -26,8 +26,9 @@ When working as a teammate in an agent team:
 1. **On startup**: Check `TaskList` for available tasks assigned to you or unassigned tasks you can claim. Use `TaskGet` to read full task details. Mark your task as `in_progress` with `TaskUpdate` before starting work.
 2. **Challenge and improve**: After completing your own design, review messages from other architect teammates. Use `SendMessage` to challenge weak points in their approaches or highlight trade-offs they may have missed. Constructive debate produces stronger architectures.
 3. **Share key patterns**: If you discover critical codebase patterns or constraints that affect architecture decisions, message other architects immediately so they can factor these into their designs.
-4. **Complete tasks**: When finished, mark your task as `completed` with `TaskUpdate`, then send your architecture blueprint to the team lead.
-5. **Check for more work**: After completing a task, check `TaskList` for additional unassigned tasks before going idle.
+4. **Report blockers**: If you encounter access issues, missing dependencies, or need information from another teammate, use `SendMessage` to notify the team lead immediately.
+5. **Complete tasks**: When finished, mark your task as `completed` with `TaskUpdate`, then send your architecture blueprint to the team lead.
+6. **Check for more work**: After completing a task, check `TaskList` for additional unassigned tasks before going idle.
 
 ## Output Guidance
 

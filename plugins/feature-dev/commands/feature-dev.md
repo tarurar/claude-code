@@ -14,6 +14,8 @@ You are helping a developer implement a new feature using an **agent team**. You
 - **Simple and elegant**: Prioritize readable, maintainable, architecturally sound code
 - **Delegate everything**: All code reading goes to explorers, all design goes to architects, all implementation goes to implementers, all review goes to reviewers. You synthesize their reports and make decisions.
 - **Manage the team lifecycle**: Create the team early, shut down teammates when their phase is done, clean up at the end.
+- **Handle teammate failures**: If a teammate stops, errors out, or goes unresponsive, spawn a replacement with the same focus area. Pass the original task description plus any partial findings from the failed teammate in the spawn prompt.
+- **Handle requirement changes**: If the user changes requirements mid-workflow, shut down all active teammates, summarize what was completed so far, and return to the appropriate earlier phase (Phase 3 for new questions, Phase 4 for new architecture). For minor changes during implementation, spawn a single implementer to apply the adjustment.
 - **Use delegate mode when available**: If the user enables delegate mode (Shift+Tab), it enforces the orchestrator role by restricting you to coordination-only tools. This is recommended during Phases 2, 4, 5, and 6.
 
 ---
@@ -31,7 +33,7 @@ Initial request: $ARGUMENTS
    - Any constraints or requirements?
 2. Summarize understanding and confirm with user
 3. Create the agent team using `TeamCreate` with a descriptive team name (e.g., "feature-dev-auth" or "feature-dev-caching")
-4. Create tasks for all major phases using `TaskCreate`:
+4. Create tasks for all major phases using `TaskCreate`. Include `activeForm` for each task (e.g., "Exploring codebase patterns", "Designing minimal approach", "Implementing auth service", "Reviewing code quality"):
    - Exploration tasks (Phase 2) — one per exploration focus area
    - Architecture tasks (Phase 4) — one per design approach
    - Implementation tasks (Phase 5) — will be refined after architecture is chosen, but create placeholder tasks now
@@ -54,7 +56,7 @@ Initial request: $ARGUMENTS
 
 2. Assign the exploration tasks you created in Phase 1 to each teammate using `TaskUpdate` with the `owner` parameter
 3. Wait for all explorer teammates to complete their tasks and send you their findings. Do NOT start doing exploration work yourself — do NOT read source files or search for patterns. Let the team handle it.
-4. Shut down explorer teammates using `SendMessage` with `type: "shutdown_request"` — they are no longer needed
+4. Shut down explorer teammates using `SendMessage` with `type: "shutdown_request"` — they are no longer needed. If a teammate rejects shutdown because they're still working, wait for them to complete, then retry.
 5. Synthesize the summaries received from explorers and present a comprehensive summary of findings and patterns to the user. Use ONLY the information teammates provided — do not read any files yourself.
 
 ---
@@ -113,7 +115,7 @@ If the user says "whatever you think is best", provide your recommendation and g
 
 3. Break the implementation map into tasks. For multi-component features, create one task per independent file group — no two teammates should modify the same file. For small or tightly coupled features, create a single task covering all files.
 
-4. Refine the placeholder implementation tasks created in Phase 1 using `TaskUpdate` with updated descriptions: the component to build, files owned, interfaces to implement, and relevant context from Phases 2-4. If the architecture requires more tasks than the placeholders created, use `TaskCreate` for additional tasks.
+4. Refine the placeholder implementation tasks created in Phase 1 using `TaskUpdate` with updated descriptions: the component to build, files owned, interfaces to implement, and relevant context from Phases 2-4. If the architecture requires more tasks than the placeholders created, use `TaskCreate` for additional tasks. If fewer tasks are needed, delete unused placeholders using `TaskUpdate` with `status: "deleted"`.
 
 5. Spawn implementer teammates using the `Task` tool with `team_name` set to your team name and `subagent_type` set to `feature-dev:code-implementer`:
    - For multi-component features: spawn one teammate per independent task (e.g., "impl-auth-service", "impl-routes", "impl-middleware")
@@ -137,14 +139,14 @@ If the user says "whatever you think is best", provide your recommendation and g
    - **Bugs/Functional correctness**: Logic errors, security vulnerabilities, edge cases
    - **Project conventions/Abstractions**: Adherence to codebase patterns and CLAUDE.md rules
 
-   Tell reviewers to cross-reference each other's findings via `SendMessage` to reduce false positives and strengthen high-confidence issues.
+   Tell reviewers to cross-reference each other's findings via `SendMessage` to reduce false positives and strengthen high-confidence issues. Note: reviewers have Bash access — instruct them to run the test suite or linter if applicable to validate the implementation beyond static review.
 
 3. Assign the review tasks to each reviewer using `TaskUpdate` with the `owner` parameter
 4. Wait for all reviewer teammates to complete and send you their findings. Do NOT start reviewing yourself.
 5. Shut down reviewer teammates using `SendMessage` with `type: "shutdown_request"`
 6. Consolidate findings and identify highest severity issues that you recommend fixing
 7. **Present findings to user and ask what they want to do** (fix now, fix later, or proceed as-is)
-8. If the user chooses "fix now": create a fix task using `TaskCreate` with the list of issues to address. Then spawn a `code-implementer` teammate (e.g., "fixer") using the `Task` tool with `team_name` and `subagent_type` set to `feature-dev:code-implementer`. Include in the spawn prompt: the list of issues to fix with file paths and line numbers, the concrete fix suggestions from reviewers, and codebase conventions. Assign the fix task to the teammate using `TaskUpdate`, wait for completion, then shut down the teammate. After the fixer completes, consider whether the fixes were substantial enough to warrant a quick re-review. If so, spawn a single reviewer teammate to verify the fixes are correct before proceeding to Phase 7.
+8. If the user chooses "fix now": create a fix task using `TaskCreate` with the list of issues to address. Then spawn a `code-implementer` teammate (e.g., "fixer") using the `Task` tool with `team_name` and `subagent_type` set to `feature-dev:code-implementer`. Include in the spawn prompt: the list of issues to fix with file paths and line numbers, the concrete fix suggestions from reviewers, and codebase conventions. Assign the fix task to the teammate using `TaskUpdate`, wait for completion, then shut down the teammate. After the fixer completes, consider whether the fixes were substantial enough to warrant a quick re-review. If so, create a verification task using `TaskCreate`, spawn a single `code-reviewer` teammate (e.g., "verifier"), assign the task, and wait for their findings. Shut down the verifier using `SendMessage` with `type: "shutdown_request"`. If the verifier found new critical issues, repeat the fix cycle. Otherwise, proceed to Phase 7.
 
 ---
 
