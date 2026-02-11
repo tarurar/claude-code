@@ -57,7 +57,7 @@ The command will guide you through the entire process interactively.
 - Asks what problem you're solving
 - Identifies constraints and requirements
 - Summarizes understanding and confirms with you
-- Creates an agent team and a shared task list with tasks for all phases
+- Creates an agent team and a shared task list with tasks for all phases, linked by dependencies so each phase flows naturally into the next
 
 **Example:**
 ```
@@ -240,7 +240,7 @@ All 3 implementers completed. Files created/modified:
   - Fix now
   - Fix later
   - Proceed as-is
-- If you choose 'fix now', a `code-implementer` teammate is spawned to apply the fixes in a separate context
+- If you choose 'fix now', a `code-implementer` teammate is spawned to apply the fixes in a separate context. For substantial fixes, a follow-up reviewer may be spawned to verify the corrections are sound.
 
 **What's new with teams:** Reviewers validate each other. If the "bugs" reviewer flags a potential null reference, the "conventions" reviewer can confirm or challenge it. This reduces false positives and strengthens high-confidence findings.
 
@@ -492,7 +492,7 @@ Let the workflow guide you through all 7 phases with coordinated team exploratio
 - **Review teammate outputs**: Teammates provide valuable insights about your codebase
 - **Don't skip phases**: Each phase serves a purpose
 - **Use for learning**: The exploration phase teaches you about your own codebase
-- **Use delegate mode**: During Phases 2, 4, and 6, delegate mode keeps the lead focused on coordination
+- **Use delegate mode**: During Phases 2, 4, 5, and 6, delegate mode keeps the lead focused on coordination
 
 ## Author
 
