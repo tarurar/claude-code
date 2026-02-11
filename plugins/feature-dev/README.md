@@ -414,7 +414,7 @@ Let the workflow guide you through all 7 phases with coordinated team exploratio
 2. **Answer clarifying questions thoughtfully**: Phase 3 prevents future confusion
 3. **Choose architecture deliberately**: Phase 4 gives you peer-reviewed options for a reason
 4. **Don't skip code review**: Phase 6 catches issues with cross-validated findings
-5. **Let teammates finish**: The lead should wait for teammates to complete before synthesizing. Use delegate mode (Shift+Tab) during team phases to prevent the lead from reading files or implementing prematurely.
+5. **Let teammates finish**: The lead should wait for teammates to complete before synthesizing. If the lead starts reading files or implementing, remind it of the "pure orchestrator" principle.
 6. **Trust teammate summaries**: The lead works from teammate reports, not from reading source files. This preserves context for the full 7-phase workflow.
 
 ## When to Use This Plugin
@@ -473,9 +473,18 @@ Let the workflow guide you through all 7 phases with coordinated team exploratio
 
 **Solution**:
 - The lead is designed as a pure orchestrator — it should never read source files
-- Use delegate mode (Shift+Tab) to restrict the lead to coordination-only tools
+- If the lead starts reading files, remind it: "You are a pure orchestrator. Spawn a teammate instead of reading files yourself."
 - If the lead says it needs more information, tell it to spawn an additional explorer teammate instead of reading files itself
-- If context is already consumed, restart the session with delegate mode enabled from the start
+- If context is already consumed, restart the session and reinforce the pure orchestrator principle from the start
+
+### Teammates have no file tools (delegate mode)
+
+**Issue**: Spawned teammates report they cannot read, write, or edit files. The lead tries spawning replacements with different agent types but they are all equally restricted.
+
+**Solution**:
+- Do NOT use delegate mode (Shift+Tab) with agent teams. Delegate mode restricts tool access for both the lead and all spawned teammates, since teammates inherit the lead's permission settings. This prevents explorers from reading code, implementers from writing code, and reviewers from running tests.
+- If delegate mode is active, press Shift+Tab to toggle it off, then spawn new teammates — existing teammates cannot regain tools
+- The plugin's "pure orchestrator" instructions already prevent the lead from reading files — delegate mode is unnecessary and counterproductive with agent teams
 
 ### Teammates not communicating
 
@@ -492,7 +501,7 @@ Let the workflow guide you through all 7 phases with coordinated team exploratio
 - **Review teammate outputs**: Teammates provide valuable insights about your codebase
 - **Don't skip phases**: Each phase serves a purpose
 - **Use for learning**: The exploration phase teaches you about your own codebase
-- **Use delegate mode**: During Phases 2, 4, 5, and 6, delegate mode keeps the lead focused on coordination
+- **Avoid delegate mode**: Do not use delegate mode (Shift+Tab) with agent teams — it restricts tool access for teammates too, preventing them from reading or writing files. The lead's built-in "pure orchestrator" instructions are sufficient.
 
 ## Author
 

@@ -16,7 +16,7 @@ You are helping a developer implement a new feature using an **agent team**. You
 - **Manage the team lifecycle**: Create the team early, shut down teammates when their phase is done, clean up at the end.
 - **Handle teammate failures**: If a teammate stops, errors out, or goes unresponsive, spawn a replacement with the same focus area. Pass the original task description plus any partial findings from the failed teammate in the spawn prompt.
 - **Handle requirement changes**: If the user changes requirements mid-workflow, shut down all active teammates, summarize what was completed so far, and return to the appropriate earlier phase (Phase 3 for new questions, Phase 4 for new architecture). For minor changes during implementation, spawn a single implementer to apply the adjustment.
-- **Use delegate mode when available**: If the user enables delegate mode (Shift+Tab), it enforces the orchestrator role by restricting you to coordination-only tools. This is recommended during Phases 2, 4, 5, and 6.
+- **Do NOT use delegate mode**: Delegate mode restricts tools for both the lead AND all spawned teammates (teammates inherit the lead's permission settings). This prevents explorers from reading files, architects from analyzing code, implementers from writing code, and reviewers from running tests. Rely on the "pure orchestrator" principle above instead — the lead's instructions already prohibit direct codebase access.
 
 ---
 
