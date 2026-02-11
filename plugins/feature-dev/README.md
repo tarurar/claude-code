@@ -1,10 +1,10 @@
 # Feature Development Plugin
 
-A comprehensive, structured workflow for feature development with specialized agents for codebase exploration, architecture design, and quality review.
+A team-based feature development workflow using agent teams for coordinated codebase exploration, collaborative architecture design, and multi-perspective quality review.
 
 ## Overview
 
-The Feature Development Plugin provides a systematic 7-phase approach to building new features. Instead of jumping straight into code, it guides you through understanding the codebase, asking clarifying questions, designing architecture, and ensuring quality—resulting in better-designed features that integrate seamlessly with your existing code.
+The Feature Development Plugin provides a systematic 7-phase approach to building new features, powered by **agent teams**. Instead of jumping straight into code, it creates a coordinated team of specialized agents that explore your codebase, design architecture collaboratively, and review code from multiple perspectives — resulting in better-designed features that integrate seamlessly with your existing code.
 
 ## Philosophy
 
@@ -14,7 +14,19 @@ Building features requires more than just writing code. You need to:
 - **Design thoughtfully** before implementing
 - **Review for quality** after building
 
-This plugin embeds these practices into a structured workflow that runs automatically when you use the `/feature-dev` command.
+This plugin embeds these practices into a structured workflow that runs automatically when you use the `/feature-dev` command. Agent teams enable parallel exploration, collaborative design debates, and cross-referenced code review — going beyond what a single agent session can achieve.
+
+## Prerequisites
+
+Agent teams must be enabled. Add this to your `settings.json`:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
 
 ## Command: `/feature-dev`
 
@@ -34,15 +46,16 @@ The command will guide you through the entire process interactively.
 
 ## The 7-Phase Workflow
 
-### Phase 1: Discovery
+### Phase 1: Discovery & Team Setup
 
-**Goal**: Understand what needs to be built
+**Goal**: Understand what needs to be built and set up the agent team
 
 **What happens:**
 - Clarifies the feature request if it's unclear
 - Asks what problem you're solving
 - Identifies constraints and requirements
 - Summarizes understanding and confirms with you
+- Creates an agent team and a shared task list with tasks for all phases
 
 **Example:**
 ```
@@ -51,30 +64,42 @@ Claude: Let me understand what you need...
         - What should be cached? (API responses, computed values, etc.)
         - What are your performance requirements?
         - Do you have a preferred caching solution?
+
+Creating team "feature-dev-caching" with task list...
 ```
 
 ### Phase 2: Codebase Exploration
 
-**Goal**: Understand relevant existing code and patterns
+**Goal**: Understand relevant existing code and patterns through coordinated team exploration
 
 **What happens:**
-- Launches 2-3 `code-explorer` agents in parallel
-- Each agent explores different aspects (similar features, architecture, UI patterns)
-- Agents return comprehensive analyses with key files to read
-- Claude reads all identified files to build deep understanding
+- Spawns 2-3 `code-explorer` teammates, each exploring a different aspect
+- Explorers share discoveries with each other via direct messaging, avoiding duplicated work
+- Each explorer returns comprehensive analysis with key files to read
+- The lead reads all identified files to build deep understanding
+- Explorers are shut down after completing their work
 - Presents comprehensive summary of findings
 
-**Agents launched:**
+**Teammates spawned:**
 - "Find features similar to [feature] and trace implementation"
 - "Map the architecture and abstractions for [area]"
 - "Analyze current implementation of [related feature]"
 
+**What's new with teams:** Explorers communicate directly. If one discovers that the codebase uses a specific pattern (e.g., repository pattern), they message the others so everyone factors it in — no duplicated discovery, faster convergence.
+
 **Example output:**
 ```
-Found similar features:
-- User authentication (src/auth/): Uses JWT tokens, middleware pattern
-- Session management (src/session/): Redis-backed, 24hr expiry
-- API security (src/api/middleware/): Rate limiting, CORS
+explorer-similar found:
+  Similar features:
+  - User authentication (src/auth/): Uses JWT tokens, middleware pattern
+  - Session management (src/session/): Redis-backed, 24hr expiry
+  → Messaged explorer-arch: "Codebase uses middleware pattern consistently"
+
+explorer-arch found:
+  Architecture layers:
+  - src/api/middleware/ — Rate limiting, CORS
+  - src/services/ — Business logic layer
+  - src/repositories/ — Data access layer
 
 Key files to understand:
 - src/auth/AuthService.ts:45 - Core authentication logic
@@ -87,7 +112,7 @@ Key files to understand:
 **Goal**: Fill in gaps and resolve all ambiguities
 
 **What happens:**
-- Reviews codebase findings and feature request
+- The lead reviews exploration findings and feature request
 - Identifies underspecified aspects:
   - Edge cases
   - Error handling
@@ -96,6 +121,8 @@ Key files to understand:
   - Performance needs
 - Presents all questions in an organized list
 - **Waits for your answers before proceeding**
+
+**Critical**: This phase ensures nothing is ambiguous before design begins.
 
 **Example:**
 ```
@@ -108,41 +135,44 @@ Before designing the architecture, I need to clarify:
 5. Error handling: How to handle OAuth failures?
 ```
 
-**Critical**: This phase ensures nothing is ambiguous before design begins.
-
 ### Phase 4: Architecture Design
 
-**Goal**: Design multiple implementation approaches
+**Goal**: Design multiple implementation approaches through collaborative architecture work
 
 **What happens:**
-- Launches 2-3 `code-architect` agents with different focuses:
+- Spawns 2-3 `code-architect` teammates with different focuses:
   - **Minimal changes**: Smallest change, maximum reuse
   - **Clean architecture**: Maintainability, elegant abstractions
   - **Pragmatic balance**: Speed + quality
-- Reviews all approaches
-- Forms opinion on which fits best for this task
+- Architects challenge each other's designs via direct messaging
+- The lead reviews all approaches and forms a recommendation
+- Architects are shut down after completing their designs
 - Presents comparison with trade-offs and recommendation
 - **Asks which approach you prefer**
 
+**What's new with teams:** Architects engage in constructive debate. If the "minimal" architect notices the "clean" approach introduces unnecessary complexity, they message each other to refine. The lead gets architectures that have already been stress-tested by peers.
+
 **Example output:**
 ```
-I've designed 3 approaches:
+I've received 3 architecture blueprints from the team:
 
-Approach 1: Minimal Changes
+Approach 1: Minimal Changes (architect-minimal)
 - Extend existing AuthService with OAuth methods
 - Add new OAuth routes to existing auth router
 - Minimal refactoring required
 Pros: Fast, low risk
 Cons: Couples OAuth to existing auth, harder to test
 
-Approach 2: Clean Architecture
+Approach 2: Clean Architecture (architect-clean)
 - New OAuthService with dedicated interface
 - Separate OAuth router and middleware
 - Refactor AuthService to use common interface
 Pros: Clean separation, testable, maintainable
 Cons: More files, more refactoring
+Note: architect-minimal challenged this for over-engineering,
+      architect-clean defended with testability argument
 
-Approach 3: Pragmatic Balance
+Approach 3: Pragmatic Balance (architect-pragmatic)
 - New OAuthProvider abstraction
 - Integrate into existing AuthService
 - Minimal refactoring, good boundaries
@@ -161,63 +191,71 @@ Which approach would you like to use?
 
 **What happens:**
 - **Waits for explicit approval** before starting
-- Reads all relevant files identified in previous phases
+- The lead reads all relevant files identified in previous phases
 - Implements following chosen architecture
 - Follows codebase conventions strictly
 - Writes clean, well-documented code
-- Updates todos as progress is made
+- Updates tasks as progress is made
 
 **Notes:**
 - Implementation only starts after you approve
 - Follows patterns discovered in Phase 2
 - Uses architecture designed in Phase 4
-- Continuously tracks progress
+- Continuously tracks progress via the shared task list
 
 ### Phase 6: Quality Review
 
-**Goal**: Ensure code is simple, DRY, elegant, and functionally correct
+**Goal**: Ensure code is simple, DRY, elegant, and functionally correct through multi-perspective review
 
 **What happens:**
-- Launches 3 `code-reviewer` agents in parallel with different focuses:
+- Spawns 3 `code-reviewer` teammates with different focuses:
   - **Simplicity/DRY/Elegance**: Code quality and maintainability
   - **Bugs/Correctness**: Functional correctness and logic errors
   - **Conventions/Abstractions**: Project standards and patterns
-- Consolidates findings
-- Identifies highest severity issues
+- Reviewers cross-reference each other's findings to reduce false positives
+- The lead consolidates findings and identifies highest severity issues
+- Reviewers are shut down after completing their reviews
 - **Presents findings and asks what you want to do**:
   - Fix now
   - Fix later
   - Proceed as-is
 - Addresses issues based on your decision
 
+**What's new with teams:** Reviewers validate each other. If the "bugs" reviewer flags a potential null reference, the "conventions" reviewer can confirm or challenge it. This reduces false positives and strengthens high-confidence findings.
+
 **Example output:**
 ```
-Code Review Results:
+Code Review Results (consolidated from 3 reviewers):
 
 High Priority Issues:
 1. Missing error handling in OAuth callback (src/auth/oauth.ts:67)
+   — Found by reviewer-bugs, confirmed by reviewer-conventions
 2. Memory leak: OAuth state not cleaned up (src/auth/oauth.ts:89)
+   — Found by reviewer-bugs
 
 Medium Priority:
 1. Could simplify token refresh logic (src/auth/oauth.ts:120)
+   — Found by reviewer-quality
 2. Consider extracting OAuth config validation
+   — Found by reviewer-conventions
 
 All tests pass. Code follows project conventions.
 
 What would you like to do?
 ```
 
-### Phase 7: Summary
+### Phase 7: Summary & Cleanup
 
-**Goal**: Document what was accomplished
+**Goal**: Document what was accomplished and clean up team resources
 
 **What happens:**
-- Marks all todos complete
+- Marks all tasks complete
 - Summarizes:
   - What was built
   - Key decisions made
   - Files modified
   - Suggested next steps
+- Cleans up the agent team and shared task list
 
 **Example:**
 ```
@@ -259,9 +297,7 @@ Suggested next steps:
 - Dependencies and integrations
 - Implementation details
 
-**When triggered:**
-- Automatically in Phase 2
-- Can be invoked manually when exploring code
+**Team behavior:** Shares discoveries with fellow explorers, claims tasks from the shared task list, marks tasks complete when done.
 
 **Output:**
 - Entry points with file:line references
@@ -281,9 +317,7 @@ Suggested next steps:
 - Implementation roadmap
 - Data flow and build sequence
 
-**When triggered:**
-- Automatically in Phase 4
-- Can be invoked manually for architecture design
+**Team behavior:** Challenges other architects' designs, shares critical patterns discovered, engages in constructive debate to produce stronger architectures.
 
 **Output:**
 - Patterns and conventions found
@@ -300,11 +334,9 @@ Suggested next steps:
 - Project guideline compliance (CLAUDE.md)
 - Bug detection
 - Code quality issues
-- Confidence-based filtering (only reports high-confidence issues ≥80)
+- Confidence-based filtering (only reports high-confidence issues >= 80)
 
-**When triggered:**
-- Automatically in Phase 6
-- Can be invoked manually after writing code
+**Team behavior:** Cross-references findings with other reviewers, avoids duplicate reports, confirms or challenges others' findings to reduce false positives.
 
 **Output:**
 - Critical issues (confidence 75-100)
@@ -319,7 +351,7 @@ Suggested next steps:
 /feature-dev Add rate limiting to API endpoints
 ```
 
-Let the workflow guide you through all 7 phases.
+Let the workflow guide you through all 7 phases with coordinated team exploration.
 
 ### Manual agent invocation:
 
@@ -340,11 +372,12 @@ Let the workflow guide you through all 7 phases.
 
 ## Best Practices
 
-1. **Use the full workflow for complex features**: The 7 phases ensure thorough planning
+1. **Use the full workflow for complex features**: The 7 phases with agent teams ensure thorough planning
 2. **Answer clarifying questions thoughtfully**: Phase 3 prevents future confusion
-3. **Choose architecture deliberately**: Phase 4 gives you options for a reason
-4. **Don't skip code review**: Phase 6 catches issues before they reach production
-5. **Read the suggested files**: Phase 2 identifies key files—read them to understand context
+3. **Choose architecture deliberately**: Phase 4 gives you peer-reviewed options for a reason
+4. **Don't skip code review**: Phase 6 catches issues with cross-validated findings
+5. **Read the suggested files**: Phase 2 identifies key files — read them to understand context
+6. **Let teammates finish**: The lead should wait for teammates to complete before synthesizing. Use delegate mode (Shift+Tab) during team phases to prevent the lead from implementing prematurely.
 
 ## When to Use This Plugin
 
@@ -363,6 +396,7 @@ Let the workflow guide you through all 7 phases.
 ## Requirements
 
 - Claude Code installed
+- Agent teams enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`)
 - Git repository (for code review)
 - Project with existing codebase (workflow assumes existing code to learn from)
 
@@ -370,11 +404,11 @@ Let the workflow guide you through all 7 phases.
 
 ### Agents take too long
 
-**Issue**: Code exploration or architecture agents are slow
+**Issue**: Exploration or architecture teammates are slow
 
 **Solution**:
 - This is normal for large codebases
-- Agents run in parallel when possible
+- Teammates run in parallel when possible
 - The thoroughness pays off in better understanding
 
 ### Too many clarifying questions
@@ -391,17 +425,34 @@ Let the workflow guide you through all 7 phases.
 **Issue**: Too many architecture options in Phase 4
 
 **Solution**:
-- Trust the recommendation—it's based on codebase analysis
+- Trust the recommendation — it's based on peer-reviewed codebase analysis
 - If still unsure, ask for more explanation
 - Pick the pragmatic option when in doubt
+
+### Lead implementing instead of delegating
+
+**Issue**: The lead starts doing exploration or review work itself
+
+**Solution**:
+- Tell the lead to wait for teammates
+- Use delegate mode (Shift+Tab) to restrict the lead to coordination-only tools
+
+### Teammates not communicating
+
+**Issue**: Teammates work in isolation without sharing findings
+
+**Solution**:
+- Ensure spawn prompts explicitly instruct teammates to use SendMessage
+- Check that agent definitions include SendMessage in their tools list
 
 ## Tips
 
 - **Be specific in your feature request**: More detail = fewer clarifying questions
 - **Trust the process**: Each phase builds on the previous one
-- **Review agent outputs**: Agents provide valuable insights about your codebase
+- **Review teammate outputs**: Teammates provide valuable insights about your codebase
 - **Don't skip phases**: Each phase serves a purpose
 - **Use for learning**: The exploration phase teaches you about your own codebase
+- **Use delegate mode**: During Phases 2, 4, and 6, delegate mode keeps the lead focused on coordination
 
 ## Author
 
@@ -409,4 +460,4 @@ Sid Bidasaria (sbidasaria@anthropic.com)
 
 ## Version
 
-1.0.0
+2.0.0

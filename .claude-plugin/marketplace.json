@@ -60,8 +60,8 @@
     },
     {
       "name": "feature-dev",
-      "description": "Comprehensive feature development workflow with specialized agents for codebase exploration, architecture design, and quality review",
-      "version": "1.0.0",
+      "description": "Team-based feature development workflow using agent teams for coordinated codebase exploration, collaborative architecture design, and multi-perspective quality review",
+      "version": "2.0.0",
       "author": {
         "name": "Siddharth Bidasaria",
         "email": "sbidasaria@anthropic.com"
