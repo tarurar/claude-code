@@ -187,21 +187,41 @@ Which approach would you like to use?
 
 ### Phase 5: Implementation
 
-**Goal**: Build the feature
+**Goal**: Build the feature through delegated team implementation
 
 **What happens:**
 - **Waits for explicit approval** before starting
-- The lead reads all relevant files identified in previous phases
-- Implements following chosen architecture
-- Follows codebase conventions strictly
-- Writes clean, well-documented code
-- Updates tasks as progress is made
+- The lead breaks the architecture blueprint into implementation tasks with clear file ownership
+- Spawns `code-implementer` teammates — one per independent component for large features, or a single implementer for small features
+- Each implementer owns a distinct set of files, preventing conflicts
+- Implementers coordinate on interfaces via direct messaging
+- The lead monitors progress and helps resolve blockers
+- Implementers are shut down after completing their work
 
-**Notes:**
-- Implementation only starts after you approve
-- Follows patterns discovered in Phase 2
-- Uses architecture designed in Phase 4
-- Continuously tracks progress via the shared task list
+**What's new with teams:** The lead never implements directly — all code is written by `code-implementer` teammates in separate contexts. This keeps the lead's context focused on coordination and prevents it from being bloated by implementation details. For multi-component features, implementers work in parallel on independent file groups. For small features, a single implementer handles everything.
+
+**Example output:**
+```
+Implementation scope: 3 independent components
+
+Spawning implementers:
+- impl-oauth-provider: owns src/auth/OAuthProvider.ts (new),
+  src/auth/types.ts (new)
+- impl-routes: owns src/routes/auth.ts, src/middleware/oauthMiddleware.ts (new)
+- impl-service: owns src/auth/AuthService.ts
+
+impl-routes → impl-oauth-provider: "What's the OAuthProvider interface?
+  I need the method signatures for the middleware."
+impl-oauth-provider → impl-routes: "authenticate(code: string): Promise<OAuthResult>,
+  refresh(token: string): Promise<OAuthResult>"
+
+All 3 implementers completed. Files created/modified:
+- src/auth/OAuthProvider.ts (new)
+- src/auth/types.ts (new)
+- src/routes/auth.ts (modified)
+- src/middleware/oauthMiddleware.ts (new)
+- src/auth/AuthService.ts (modified)
+```
 
 ### Phase 6: Quality Review
 
@@ -325,6 +345,24 @@ Suggested next steps:
 - Complete component design
 - Implementation map with specific files
 - Build sequence with phases
+
+### `code-implementer`
+
+**Purpose**: Implements features from architecture blueprints within assigned file boundaries
+
+**Focus areas:**
+- Writing clean, convention-following code
+- Respecting file ownership to avoid conflicts
+- Coordinating on interfaces with other implementers
+- Incremental, well-structured implementation
+
+**Team behavior:** Coordinates interface contracts with fellow implementers via messaging, reports blockers immediately, respects file ownership boundaries strictly.
+
+**Output:**
+- Files created with descriptions
+- Files modified with change summaries
+- Integration notes for other teammates
+- Deviations from blueprint with justification
 
 ### `code-reviewer`
 
