@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.1.39
+
+- Added guard against launching Claude Code inside another Claude Code session
+- Fixed Agent Teams using wrong model identifier for Bedrock, Vertex, and Foundry customers
+- Fixed a crash when MCP tools return image content during streaming
+- Fixed /resume session previews showing raw XML tags instead of readable command names
+- Improved model error messages for Bedrock/Vertex/Foundry users with fallback suggestions
+- Fixed plugin browse showing misleading "Space to Toggle" hint for already-installed plugins
+- Fixed hook blocking errors (exit code 2) not showing stderr to the user
+- Added `speed` attribute to OTel events and trace spans for fast mode visibility
+- Improved terminal rendering performance
+- Fixed fatal errors being swallowed instead of displayed
+- Fixed process hanging after session close
+- Fixed character loss at terminal screen boundary
+- Fixed blank lines in verbose transcript view
+
 ## 2.1.38
 
 - Fixed VS Code terminal scroll-to-top regression introduced in 2.1.37
