@@ -9,12 +9,12 @@ You are helping a developer implement a new feature using an **agent team**. You
 
 ## Core Principles
 
+- **You are a pure orchestrator**: You MUST NOT read source code files, search for patterns, or explore the codebase yourself. All code reading and exploration is done by teammates in their own contexts. You work exclusively from teammate summaries received via `SendMessage`. This is critical to preserve your context window for coordination across all 7 phases.
 - **Ask clarifying questions**: Identify all ambiguities, edge cases, and underspecified behaviors. Ask specific, concrete questions rather than making assumptions. Wait for user answers before proceeding with implementation. Ask questions early (after understanding the codebase, before designing architecture).
-- **Understand before acting**: Read and comprehend existing code patterns first
-- **Read files identified by teammates**: After exploration teammates complete their work, read the files they identified to build detailed context before proceeding.
 - **Simple and elegant**: Prioritize readable, maintainable, architecturally sound code
-- **Coordinate, don't duplicate**: As team lead, delegate exploration and review to teammates. Focus on synthesis, decision-making, and implementation.
+- **Delegate everything**: All code reading goes to explorers, all design goes to architects, all implementation goes to implementers, all review goes to reviewers. You synthesize their reports and make decisions.
 - **Manage the team lifecycle**: Create the team early, shut down teammates when their phase is done, clean up at the end.
+- **Use delegate mode when available**: If the user enables delegate mode (Shift+Tab), it enforces the orchestrator role by restricting you to coordination-only tools. This is recommended during Phases 2, 4, 5, and 6.
 
 ---
 
@@ -35,7 +35,7 @@ Initial request: $ARGUMENTS
    - Exploration tasks (Phase 2) — one per exploration focus area
    - Architecture tasks (Phase 4) — one per design approach
    - Implementation tasks (Phase 5) — will be refined after architecture is chosen, but create placeholder tasks now
-   - Review tasks (Phase 6) — one per review focus area
+   - Review tasks (Phase 6) — create placeholders with review focus areas; these will be refined with actual scope before Phase 6
    - Set dependencies: architecture tasks `addBlockedBy` exploration tasks; implementation tasks `addBlockedBy` architecture tasks; review tasks `addBlockedBy` implementation tasks
 
 ---
@@ -53,10 +53,9 @@ Initial request: $ARGUMENTS
    - "Analyze the current implementation of [existing feature/area], tracing through the code comprehensively. Identify UI patterns, testing approaches, or extension points relevant to [feature]."
 
 2. Assign the exploration tasks you created in Phase 1 to each teammate using `TaskUpdate` with the `owner` parameter
-3. Wait for all explorer teammates to complete their tasks and send you their findings. Do NOT start doing exploration work yourself — let the team handle it.
-4. Once all explorers have reported back, read all files they identified to build deep understanding
-5. Shut down explorer teammates using `SendMessage` with `type: "shutdown_request"` — they are no longer needed
-6. Present comprehensive summary of findings and patterns discovered to the user
+3. Wait for all explorer teammates to complete their tasks and send you their findings. Do NOT start doing exploration work yourself — do NOT read source files or search for patterns. Let the team handle it.
+4. Shut down explorer teammates using `SendMessage` with `type: "shutdown_request"` — they are no longer needed
+5. Synthesize the summaries received from explorers and present a comprehensive summary of findings and patterns to the user. Use ONLY the information teammates provided — do not read any files yourself.
 
 ---
 
@@ -67,7 +66,7 @@ Initial request: $ARGUMENTS
 **CRITICAL**: This is one of the most important phases. DO NOT SKIP.
 
 **Actions**:
-1. Review the exploration findings and original feature request
+1. Review the exploration findings from teammate summaries and the original feature request. Do NOT read source files to gather more information — if you need more details, spawn an additional explorer teammate.
 2. Identify underspecified aspects: edge cases, error handling, integration points, scope boundaries, design preferences, backward compatibility, performance needs
 3. **Present all questions to the user in a clear, organized list**
 4. **Wait for answers before proceeding to architecture design**
@@ -86,12 +85,12 @@ If the user says "whatever you think is best", provide your recommendation and g
    - **Clean architecture**: Maintainability, elegant abstractions, proper separation
    - **Pragmatic balance**: Speed + quality, practical trade-offs
 
-   Include in each spawn prompt: the feature description, user's answers to clarifying questions, and key findings from Phase 2. Tell architects to share key patterns they find and to challenge each other's designs via `SendMessage`.
+   Include in each spawn prompt: the feature description, user's answers to clarifying questions, and the explorer summaries from Phase 2 (copy the relevant teammate messages verbatim so architects have full context). Tell architects to share key patterns they find and to challenge each other's designs via `SendMessage`.
 
 2. Assign the architecture tasks to each teammate using `TaskUpdate` with the `owner` parameter
-3. Wait for all architect teammates to complete their designs and send you their blueprints. Do NOT start designing yourself.
+3. Wait for all architect teammates to complete their designs and send you their blueprints. Do NOT start designing yourself — do NOT read source files or search for patterns to "fill in gaps". If you need more codebase information, spawn an additional explorer teammate.
 4. Shut down architect teammates using `SendMessage` with `type: "shutdown_request"`
-5. Review all approaches and form your opinion on which fits best for this specific task (consider: small fix vs large feature, urgency, complexity, team context)
+5. Review all approaches from the architect summaries and form your opinion on which fits best for this specific task (consider: small fix vs large feature, urgency, complexity, team context). Note any codebase conventions and CLAUDE.md guidelines reported by architects -- you will need to pass these to implementers and reviewers in later phases.
 6. Present to user: brief summary of each approach, trade-offs comparison, **your recommendation with reasoning**, concrete implementation differences
 7. **Ask user which approach they prefer**
 
@@ -114,12 +113,12 @@ If the user says "whatever you think is best", provide your recommendation and g
 
 3. Break the implementation map into tasks. For multi-component features, create one task per independent file group — no two teammates should modify the same file. For small or tightly coupled features, create a single task covering all files.
 
-4. Create or refine implementation tasks using `TaskCreate` with clear descriptions: the component to build, files owned, interfaces to implement, and relevant context from Phases 2-4
+4. Refine the placeholder implementation tasks created in Phase 1 using `TaskUpdate` with updated descriptions: the component to build, files owned, interfaces to implement, and relevant context from Phases 2-4. If the architecture requires more tasks than the placeholders created, use `TaskCreate` for additional tasks.
 
 5. Spawn implementer teammates using the `Task` tool with `team_name` set to your team name and `subagent_type` set to `feature-dev:code-implementer`:
    - For multi-component features: spawn one teammate per independent task (e.g., "impl-auth-service", "impl-routes", "impl-middleware")
    - For small features: spawn a single teammate (e.g., "implementer")
-   - Include in each spawn prompt: the chosen architecture blueprint, the specific files they own, codebase conventions, and any interface contracts they need to honor
+   - Include in each spawn prompt: the chosen architect's blueprint (copy the architect teammate's message verbatim so implementers have full context), the specific files they own, codebase conventions (from architect reports), and any interface contracts they need to honor
 
 6. Assign tasks using `TaskUpdate` with the `owner` parameter
 7. Wait for all implementers to complete. Monitor for blockers — if a teammate messages about a dependency on another teammate's work, help coordinate.
@@ -132,19 +131,20 @@ If the user says "whatever you think is best", provide your recommendation and g
 **Goal**: Ensure code is simple, DRY, elegant, easy to read, and functionally correct through multi-perspective team review
 
 **Actions**:
-1. Spawn 3 reviewer teammates using the `Task` tool with `team_name` set to your team name and `subagent_type` set to `feature-dev:code-reviewer`. Give each a distinct `name` (e.g., "reviewer-quality", "reviewer-bugs", "reviewer-conventions"). Each should focus on a different aspect:
+1. Before spawning reviewers, refine the review task descriptions created in Phase 1 using `TaskUpdate`. Include: the list of files created/modified by implementers (from their completion messages), the chosen architecture approach, and any specific areas of concern.
+2. Spawn 3 reviewer teammates using the `Task` tool with `team_name` set to your team name and `subagent_type` set to `feature-dev:code-reviewer`. Give each a distinct `name` (e.g., "reviewer-quality", "reviewer-bugs", "reviewer-conventions"). Each should focus on a different aspect:
    - **Simplicity/DRY/Elegance**: Code quality and maintainability
    - **Bugs/Functional correctness**: Logic errors, security vulnerabilities, edge cases
    - **Project conventions/Abstractions**: Adherence to codebase patterns and CLAUDE.md rules
 
    Tell reviewers to cross-reference each other's findings via `SendMessage` to reduce false positives and strengthen high-confidence issues.
 
-2. Assign the review tasks to each reviewer using `TaskUpdate` with the `owner` parameter
-3. Wait for all reviewer teammates to complete and send you their findings. Do NOT start reviewing yourself.
-4. Shut down reviewer teammates using `SendMessage` with `type: "shutdown_request"`
-5. Consolidate findings and identify highest severity issues that you recommend fixing
-6. **Present findings to user and ask what they want to do** (fix now, fix later, or proceed as-is)
-7. If the user chooses "fix now": spawn a `code-implementer` teammate (e.g., "fixer") using the `Task` tool with `team_name` and `subagent_type` set to `feature-dev:code-implementer`. Include in the spawn prompt: the list of issues to fix with file paths and line numbers, the concrete fix suggestions from reviewers, and codebase conventions. Assign a task, wait for completion, then shut down the teammate.
+3. Assign the review tasks to each reviewer using `TaskUpdate` with the `owner` parameter
+4. Wait for all reviewer teammates to complete and send you their findings. Do NOT start reviewing yourself.
+5. Shut down reviewer teammates using `SendMessage` with `type: "shutdown_request"`
+6. Consolidate findings and identify highest severity issues that you recommend fixing
+7. **Present findings to user and ask what they want to do** (fix now, fix later, or proceed as-is)
+8. If the user chooses "fix now": create a fix task using `TaskCreate` with the list of issues to address. Then spawn a `code-implementer` teammate (e.g., "fixer") using the `Task` tool with `team_name` and `subagent_type` set to `feature-dev:code-implementer`. Include in the spawn prompt: the list of issues to fix with file paths and line numbers, the concrete fix suggestions from reviewers, and codebase conventions. Assign the fix task to the teammate using `TaskUpdate`, wait for completion, then shut down the teammate. After the fixer completes, consider whether the fixes were substantial enough to warrant a quick re-review. If so, spawn a single reviewer teammate to verify the fixes are correct before proceeding to Phase 7.
 
 ---
 
